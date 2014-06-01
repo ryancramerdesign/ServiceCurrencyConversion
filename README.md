@@ -151,13 +151,13 @@ The above would output:
 ````````
 array(
   'USD' => array(
-  'code' => 'USD',
-  'name' => 'US Dollars',
-  'symbol' => '$',
-  'x' => 1 // all exchange rates USD
+    'code' => 'USD',
+    'name' => 'US Dollars',
+    'symbol' => '$',
+    'x' => 1 // all exchange rates USD
   ), 
   'EUR' => array(
-  // ...	
+    // ...	
   ), 
   // ... and so on for all currencies
 ); 
