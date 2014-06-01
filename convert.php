@@ -11,7 +11,7 @@
  *
  */ 
 
-if(!defined("PROCESSWIRE")) throw new WireException("This file requires ProcessWire"); 
+if(!defined("PROCESSWIRE")) die("This file requires ProcessWire"); 
 
 ?><!DOCTYPE html>
 <html>
