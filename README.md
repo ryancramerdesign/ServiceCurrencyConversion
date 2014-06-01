@@ -1,18 +1,20 @@
-# Currency Conversion Service
-
-## Module for ProcessWire
+# Currency Conversion for ProcessWire
 
 This module is designed for performing currency conversions among ~165
-different currencies. It uses OpenExchangeRates.org (or compatible) 
-for data so that currency exchange rates are always up-to-date. 
+different currencies. It uses [OpenExchangeRates.org](http://www.openexchangerates.org)
+(or compatible) for data so that currency exchange rates are always up-to-date. 
 
-THe module provides functions that you can use to convert from one 
-currency to another via the API. This is especially handy for generating 
-rate tables in multiple currencies or giving users of your site the option 
-to see prices in their currency. 
+It provides various API functions that you can use to convert from one 
+currency to another. This is especially handy for generating rate tables 
+in multiple currencies or giving users of your site the option to see 
+prices in their currency. 
+
+For a live example of a basic currency conversion tool built with this module
+see the included [convert.php](https://github.com/ryancramerdesign/ServiceCurrencyConversion/blob/master/convert.php) 
+file and test it out [here](https://processwire.com/api/modules/cc-example/). 
 
 
-### How to install
+## How to install
 
 1. Copy the files here into /site/modules/ServiceCurrencyConversion/
 2. In your ProcessWire admin, check for new modules and click install for this module.
@@ -25,7 +27,7 @@ to see prices in their currency.
    After saving, you should see a table indicating current exchange rate data. 
 
 
-### How to use
+## How to use
 
 Usage is best demonstrated by example. Here is a basic example that 
 demonstrates conversion of a rate from USD (US Dollars) to EUR (Euros). The
@@ -56,7 +58,7 @@ module in the variable $ex, obtained by a call like this:
 $cc = $modules->get('ServiceCurrencyConversion'); 
 `````````
 
-#### convert($fromCurrency, $toCurrency, $amount)
+#### $cc->convert($fromCurrency, $toCurrency, $amount)
 
 Convert an amount from one currency to another and return the converted amount. 
 For $fromCurrency and $toCurrency, specify the 3-digit currency code. 
@@ -67,7 +69,7 @@ echo $cc->convert('EUR', 'USD', 100); // outputs 136.335 (when I tested)
 `````````
 
 
-#### getSymbol($currency)
+#### $cc->getSymbol($currency)
 
 Return the currency symbol used by the given currency code. 
 
@@ -75,7 +77,7 @@ Return the currency symbol used by the given currency code.
 echo $cc->getSymbol('USD'); // outputs "$"
 `````````
 
-#### getName($currency)
+#### $cc->getName($currency)
 
 Return the currency name (in English) for the given currency code. 
 
@@ -83,7 +85,7 @@ Return the currency name (in English) for the given currency code.
 echo $cc->getName('EUR'); // outputs "Euro"
 `````````
 
-#### lastUpdated()
+#### $cc->lastUpdated()
 
 Returns the time (UNIX timestamp) that the exchange rate data was last updated. 
 
@@ -93,7 +95,7 @@ echo "<p>Last updated: " . date('Y-m-d H:i:s', $time) . "</p>";
 ````````
 
 
-#### updateNow()
+#### $cc->updateNow()
 
 Force the exchange rates to update now. 
 
@@ -103,7 +105,7 @@ if($success) echo "Rates were updated";
 ```````
 
 
-#### getRatesTable($useCache = true)
+#### $cc->getRatesTable($useCache = true)
 
 Return an array with all exchange rate data indexed by currency code
 with each item containing the currency name, symbol and USD exchange rate
@@ -133,7 +135,7 @@ If set to false, it will retrieve the data from OpenExchangeRates.org immediatel
 without considering a previously retrieved local copy of rates (cache). 
 
 
-#### getConvertedRatesTable($fromCode = 'USD', $amount = 1)
+#### $cc->getConvertedRatesTable($fromCode = 'USD', $amount = 1)
 
 Get exchange rates from one currency to all others. Returns an array of all
 data indexed by currency code with each item containing the currency name, 
