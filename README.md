@@ -21,7 +21,7 @@ file and [test it out here](https://processwire.com/api/modules/cc-example/).
 2. In your ProcessWire admin, check for new modules and click install for this module.
 
 3. Obtain an OpenExchangeRates.org API key. Because this module caches the exchange rate data
-   for a period that you specify, you find the free account to be adequate unless you need
+   for a period that you specify, you may find the free account to be adequate unless you need
    up-to-the-minute exchange rate data. 
 
     - [Free account](https://openexchangerates.org/signup/free)
@@ -62,6 +62,8 @@ module in the variable $ex, obtained by a call like this:
 $cc = $modules->get('ServiceCurrencyConversion'); 
 `````````
 
+----------
+
 #### $cc->convert($fromCurrency, $toCurrency, $amount)
 
 Convert an amount from one currency to another and return the converted amount. 
@@ -72,6 +74,7 @@ For $fromCurrency and $toCurrency, specify the 3-digit currency code.
 echo $cc->convert('EUR', 'USD', 100); // outputs 136.335 (when I tested)
 `````````
 
+----------
 
 #### $cc->getSymbol($currency)
 
@@ -81,6 +84,8 @@ Return the currency symbol used by the given currency code.
 echo $cc->getSymbol('USD'); // outputs "$"
 `````````
 
+----------
+
 #### $cc->getName($currency)
 
 Return the currency name (in English) for the given currency code. 
@@ -88,6 +93,8 @@ Return the currency name (in English) for the given currency code.
 `````````
 echo $cc->getName('EUR'); // outputs "Euro"
 `````````
+
+----------
 
 #### $cc->lastUpdated()
 
@@ -98,6 +105,7 @@ $time = $cc->lastUpdated();
 echo "<p>Last updated: " . date('Y-m-d H:i:s', $time) . "</p>";
 ````````
 
+----------
 
 #### $cc->updateNow()
 
@@ -108,6 +116,7 @@ $success = $cc->updateNow();
 if($success) echo "Rates were updated";
 ```````
 
+----------
 
 #### $cc->getRatesTable($useCache = true)
 
@@ -138,6 +147,7 @@ The getRatesTable method accepts a $useCache method, which is true by default.
 If set to false, it will retrieve the data from OpenExchangeRates.org immediately
 without considering a previously retrieved local copy of rates (cache). 
 
+----------
 
 #### $cc->getConvertedRatesTable($fromCode = 'USD', $amount = 1)
 
