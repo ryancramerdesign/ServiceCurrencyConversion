@@ -1,7 +1,7 @@
 # Currency Conversion for ProcessWire
 
-This module is designed for performing currency conversions among ~165
-different currencies. It uses [OpenExchangeRates.org](http://www.openexchangerates.org)
+This module is designed for performing currency conversions among [~165 world currencies](https://openexchangerates.org/currencies). 
+It uses [OpenExchangeRates.org](http://www.openexchangerates.org)
 (or compatible) for data so that currency exchange rates are always up-to-date. 
 
 It provides various API functions that you can use to convert from one 
@@ -9,20 +9,24 @@ currency to another. This is especially handy for generating rate tables
 in multiple currencies or giving users of your site the option to see 
 prices in their currency. 
 
-For a live example of a basic currency conversion tool built with this module
+**For a live example** of a basic currency conversion tool built with this module
 see the included [convert.php](https://github.com/ryancramerdesign/ServiceCurrencyConversion/blob/master/convert.php) 
-file and test it out [here](https://processwire.com/api/modules/cc-example/). 
+file and [test it out here](https://processwire.com/api/modules/cc-example/). 
 
 
 ## How to install
 
 1. Copy the files here into /site/modules/ServiceCurrencyConversion/
+
 2. In your ProcessWire admin, check for new modules and click install for this module.
+
 3. Obtain an OpenExchangeRates.org API key. Because this module caches the exchange rate data
-   for a period that you specify, you likely will only need the free account unless you 
-   need up-to-the-minute exchange rate data. 
+   for a period that you specify, you find the free account to be adequate unless you need
+   up-to-the-minute exchange rate data. 
+
     - [Free account](https://openexchangerates.org/signup/free)
     - [Commercial account](https://openexchangerates.org/signup)
+
 4. Paste your key into the module configuration screen where prompted to do so.
    After saving, you should see a table indicating current exchange rate data. 
 
