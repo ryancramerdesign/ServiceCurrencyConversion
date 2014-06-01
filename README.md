@@ -96,6 +96,26 @@ echo $cc->getName('EUR'); // outputs "Euro"
 
 ----------
 
+#### $cc->getNames()
+
+Return array of all possible currency names (in English) indexed by currency code. 
+
+`````````
+$names = $cc->getNames(); 
+`````````
+
+----------
+
+#### $cc->getCodes()
+
+Return array of all possible currency codes (3 digits each)
+
+`````````
+$codes = $cc->getCodes(); 
+`````````
+
+----------
+
 #### $cc->lastUpdated()
 
 Returns the time (UNIX timestamp) that the exchange rate data was last updated. 

@@ -336,6 +336,32 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 	}
 
 	/**
+	 * Return all currency names (in English), indexed by currency code
+	 *
+	 * @return array()
+	 *
+	 */
+	public function getNames() {
+		$names = array();
+		$items = $this->getRatesTable();
+		foreach($items as $code => $item) {
+			$names[$code] = $item['name'];
+		}
+		return $names; 	
+	}
+
+	/**
+	 * Return all possible currency codes
+	 *
+	 * @return array()
+	 *
+	 */
+	public function getCodes() {
+		$names = $this->getNames();
+		return array_keys($names); 
+	}
+
+	/**
 	 * Get the exchange rate going from one currency to another.
 	 *
 	 * @param string $fromCurrency Currency that units are specified in (use 3 digit currency code)

@@ -28,66 +28,66 @@ if(!defined("PROCESSWIRE")) throw new WireException("This file requires ProcessW
 	<?php
 		
 	$cc = $modules->get('ServiceCurrencyConversion'); 
+	$names = $cc->getNames(); // names of currencies, indexed by 3-digit codes
+	$amount = '';
+	$options = '';
 
-	// build select options for form
-	$data = $cc->getRatesTable();	
-	$optionsFrom = '';
-	foreach($data as $code => $currency) {
-		$optionsFrom .= "<option value='$code'>$code: $currency[name]</option>";
+	foreach($names as $code => $name) {
+		$options .= "<option value='$code'>$code: $name</option>";
 	}
 
-	$optionsTo = $optionsFrom; 
-	$amountFrom = '';
+	$optionsFrom = $options; 
+	$optionsTo = $options; 
 
 	if($input->post->submit) {
-		// a currency conversion was requested
 
-		$currencyFrom = $sanitizer->name($input->post->currency_from); 
-		$currencyTo = $sanitizer->name($input->post->currency_to); 
-		$amountFrom = (float) $input->post->amount_from; 
+		// a currency conversion was requested, so sanitize submitted data
+		$from = array_key_exists($input->post->from, $names) ? $input->post->from : '';
+		$to = array_key_exists($input->post->to, $names) ? $input->post->to : '';
+		$amount = (float) $input->post->amount; 
 
-		if($currencyFrom && $currencyTo && $amountFrom > 0) {
+		if($from && $to && $amount > 0) {
+
 			// perform the conversion
-			$amountTo = $cc->convert($currencyFrom, $currencyTo, $amountFrom); 
+			$converted = $cc->convert($from, $to, $amount); 
 
 			// we will round to 2 decimals for presentation purposes
-			$amountFrom = round($amountFrom, 2); 
-			$amountTo = round($amountTo, 2); 
+			$converted = round($converted, 2); 
 
 			// get other info about the currencies for presentation purposes
-			$nameFrom = $cc->getName($currencyFrom); 
-			$nameTo = $cc->getName($currencyTo); 
-			$symbolFrom = $cc->getSymbol($currencyFrom); 
-			$symbolTo = $cc->getSymbol($currencyTo); 
+			$nameFrom = $names[$from]; 
+			$nameTo = $names[$to]; 
+			$symbolFrom = $cc->getSymbol($from); 
+			$symbolTo = $cc->getSymbol($to); 
 
-			echo "<h2>$symbolFrom $amountFrom $nameFrom = $symbolTo $amountTo $nameTo</h2>";
+			echo "<h2>$symbolFrom $amount $nameFrom = $symbolTo $converted $nameTo</h2>";
 			
 		} else {
 			echo "<h2>Missing required fields</h2>";
 		}
 
 		// make the relevant items already selected if they submitted the form
-		$optionsFrom = str_replace("<option value='$currencyFrom'>", "<option selected value='$currencyFrom'>", $optionsFrom); 
-		$optionsTo = str_replace("<option value='$currencyTo'>", "<option selected value='$currencyTo'>", $optionsTo); 
+		$optionsFrom = str_replace("<option value='$from'>", "<option selected value='$from'>", $optionsFrom); 
+		$optionsTo = str_replace("<option value='$to'>", "<option selected value='$to'>", $optionsTo); 
 	}
 
 	?>
 
 	<p>
-	<select name='currency_from'>
+	<select name='from'>
 		<option>Currency From</option>
 		<?php echo $optionsFrom; ?>
 	</select>
 	</p>
 
 	<p>
-	<select name='currency_to'>
+	<select name='to'>
 		<option>Currency To</option>
 		<?php echo $optionsTo; ?>
 	</select>
 	</p>
 
-	<p><input type='text' name='amount_from' placeholder='Amount' value='<?php echo $amountFrom; ?>' /></p>
+	<p><input type='text' name='amount' placeholder='Amount' value='<?php echo $amount; ?>' /></p>
 	<p><input type='submit' name='submit' value='Convert' /></p>
 
 	</form>
