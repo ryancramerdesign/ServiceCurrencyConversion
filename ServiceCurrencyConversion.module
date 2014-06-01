@@ -1,0 +1,445 @@
+<?php
+
+/**
+ * Currency Conversion Service
+ * 
+ * ProcessWire 2.x 
+ * Copyright (C) 2014 by Ryan Cramer 
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ * 
+ * http://processwire.com
+ *
+ * USAGE
+ *
+ * $ex = $modules->get('ServiceCurrencyConversion'); 
+ * $dollars = 100; 
+ * $euros = $ex->convert('USD', 'EUR', $dollars); 
+ *
+ */
+
+class ServiceCurrencyConversion extends WireData implements Module, ConfigurableModule {
+
+	/**
+	 * getModuleInfo is a module required by all modules to tell ProcessWire about them
+	 *
+	 * @return array
+	 *
+	 */
+	public static function getModuleInfo() {
+
+		return array(
+			'title' => 'Currency Conversion', 
+			'version' => 1, 
+			'summary' => 'Provides API capabilities for converting from one currency to another, using the OpenExchangeRates service.',
+			'href' => 'http://openexchangerates.org', 
+			'singular' => false, 
+			'autoload' => false, 
+			);
+	}
+
+
+	/**
+	 * Default settings configured with this module
+	 *
+	 */
+	static $defaultSettings = array(
+		'serviceURL' => 'http://openexchangerates.org/api/latest.json', 
+		'appID' => '', 
+		'cacheTime' => 86400
+		);
+
+	/**
+	 * Whether or not entity encoding is on for returned string values (code, name, symbol)
+	 *
+	 * null=the default, which means it follows the current page's output formatting state.
+	 * true=entity encoding always
+	 * false=entity encoding always off
+	 *
+	 */
+	protected $entityEncode = null;  
+
+	/**
+	 * Construct and init default settings
+	 *
+	 */
+	public function __construct() {
+		foreach(self::$defaultSettings as $key => $value) $this->set($key, $value);
+	}
+
+	/**
+	 * Initialize the module
+	 *
+	 */
+	public function init() {
+	}
+
+	/**
+	 * Return the filename used for caching the JSON data
+	 * 
+	 * @return string
+	 * 
+	 */
+	protected function cacheFilename() {
+		return $this->config->paths->cache . $this->className() . ".json";
+	}
+
+	/**
+	 * Return the time of the current rate data was last updated
+	 * 
+	 * @return int Unix timestamp
+	 * 
+	 */
+	public function lastUpdated() {
+		return filemtime($this->cacheFilename()); 
+	}
+
+	/**
+	 * Update the exchange rate data now
+	 * 
+	 * @return bool True on success, false on failure
+	 * 
+	 */
+	public function updateNow() {
+		$data = $this->getLatestData(false); 
+		if($data && count($data) && empty($data['error'])) return true; 
+		return false; 
+	}
+
+	/**
+	 * Turn on or off entity encoding
+	 *
+	 * If not called, this module will follow the entity encoding state of the current page.
+	 * 
+	 * @param null|bool $entityEncode
+	 * @return this
+	 * 
+	 */
+	public function setEntityEncode($entityEncode = true) {
+		if(!is_null($entityEncode) && !is_bool($entityEncode)) throw new WireException("Invalid argument for entityEncode: must be null or bool"); 
+		$this->entityEncode = $entityEncode; 
+		return $this; 
+	}
+
+	/**
+	 * Entity encode a string, only if the current state requires it 
+	 *
+	 * @param string $str
+	 * @return string
+	 * 
+	 */
+	protected function entities($str) {
+		if($this->entityEncode === true || ($this->entityEncode === null && $this->wire('page')->outputFormatting())) {
+			$str = $this->wire('sanitizer')->entities($str); 	
+		}
+		return trim($str); 
+	}
+
+	/**
+	 * Retrieve latest conversion data from openexchangerates.org web service
+	 * 
+	 * @return array
+	 * 
+	 */
+	protected function getLatestData($useCache = true) {
+
+		static $data = array();
+		if(!empty($data) && $useCache) return $data; 
+
+		$file = $this->cacheFilename();
+		$exists = $useCache ? is_file($file) : false; 
+		$mtime = $exists ? filemtime($file) : 0;
+
+		if(!$exists || time() - $mtime > $this->cacheTime || date('d') != date('d', $mtime)) {
+
+			$http = new WireHttp(); 
+			$data = $http->get($this->serviceURL . "?app_id=$this->appID"); 
+			
+			if($data) {
+				file_put_contents($file, $data); 
+				if($this->config->chmodFile) chmod($file, octdec($this->config->chmodFile));
+			} else {
+				$data = file_get_contents($file);
+				$this->error("Error retrieving exchange rates from $this->serviceURL", Notice::log); 
+			}
+
+		} else {
+			$data = file_get_contents($file);
+		}
+
+		if($data) $data = json_decode($data, true); 
+		if($data && !empty($data['error'])) {
+			$this->error($data['message'] . ' - ' . $data['description'], Notice::log); 
+			unlink($file); 
+		}
+
+		return $data; 
+	}
+
+	/**
+	 * Return a rates table for all currencies, indexed by currency code,including currency name, symbol and exchange rate (relative to USD)
+	 * 
+	 * @return array
+	 * 
+	 */
+	public function getRatesTable($useCache = true) {
+
+		$data = $this->getLatestData($useCache);
+		$curr = file(dirname(__FILE__) . '/currencies.txt'); 
+		$rates = array();
+		$sanitizer = $this->wire('sanitizer'); 
+
+		foreach($curr as $line) {
+			if(substr_count($line, "\t") < 2) {
+				list($code, $name) = explode("\t", $line); 
+				$symbol = '';
+			} else {
+				list($code, $name, $symbol) = explode("\t", $line); 
+			}
+			if(!isset($data['rates'][$code])) continue; 	
+			$rates[$code] = array(
+				'code' => $this->entities($code), 
+				'name' => $this->entities($name), 
+				'symbol' => $this->entities($symbol), 
+				'x' => (float) $data['rates'][$code]
+				);
+		}
+
+		return $rates; 
+	}
+
+	/**
+	 * Get exchange rates from one currency to all others
+	 *
+	 * @param string $fromCode Currency that units are specified in (use 3 digit currency code)
+	 * @param int|float $amount Number of units in currency
+	 * @param float|int $markupX Factor to markup exchange rate by. Example: to markup all rates by 2.3%, specify 0.023 as the markup value.
+	 * @param int $decimals Number of decimals to round to (default = -1, which means no rounding)
+	 * @return array Returns an array(
+		"[currency code]" => array(
+			'name' => 'Euros', 
+			'symbol' => '&euro;', 
+			'x' => [USD exchange rate], 
+			'x_actual' => [exchange rate, before markup if markupX used]
+			'amount' => [your $amount in this currency]
+			'amount_actual' => [your $amount in this currency, before markup if markupX used]
+			), 
+		"[currency code]" => array(
+			...and so on...
+			),
+		.. and so on...
+		);
+	 * 
+	 */
+	public function getConvertedRatesTable($fromCode = 'USD', $amount = 1, $markupX = 0.0, $decimals = -1) { 
+
+		$fromCode = strtoupper($fromCode);
+		$rates = $this->getRatesTable();
+
+
+		if($fromCode != 'USD') {
+			$fromX = $rates[$fromCode]['x'];
+			$rateUSD = (1 / $fromX) * $amount; 
+			$rates['USD']['amount'] = $rateUSD; 
+		} else {
+			$rates['USD']['amount'] = $amount; 
+		}
+
+		foreach($rates as $key => $value) {
+
+			if($key == $fromCode) {
+				$rates[$key]['amount'] = $amount; 
+
+			} else {
+
+				$x = $rates[$key]['x'];
+
+				if($markupX != 0.0) {
+					$rates[$key]['x_actual'] = $x;
+					$x = $x + ($x * $markupX);
+				}
+
+				$rates[$key]['amount'] = $rates['USD']['amount'] * $x;
+				if($markupX != 0.0) $rates[$key]['amount_actual'] = $rates['USD']['amount'] * $rates[$key]['x_actual'];
+				$rates[$key]['x'] = $x;
+
+				if($decimals > -1) {
+					$rates[$key]['amount'] = round($rates[$key]['amount'], $decimals); 
+					if($markupX != 0.0) $rates[$key]['amount_actual'] = round($rates[$key]['amount_actual'], $decimals); 
+				}
+			}
+		}
+
+		return $rates; 
+	}
+
+	/**
+	 * Convert a rate from one currency to another and return detailed information in an array. 
+	 *
+	 * @throws WireException
+	 * @param string $fromCurrency Currency that units are specified in (use 3 digit currency code)
+	 * @param string $toCurrency Currency that you want to convert to (use 3 digit currency code)
+	 * @param int|float $amount Number of units in currency
+	 * @param float $markup Optional Factor to markup exchange rate by. Example: to markup all rates by 2.3%, specify 0.023 as the markup value.
+	 * @param int $decimals Optional Number of decimals to round to (default = -1, no rounding)
+	 * @return array Returns an array of 
+	 *	'name' => 'Euros', 
+	 * 	'symbol' => '&euro;', 
+	 * 	'x' => [exhcange rate], 
+	 * 	'x_actual' => [exchange rate, before markup if markupX used]
+	 * 	'amount' => [your $amount in this currency]
+	 * 	'rate_actual' => [your $amount in this currency, before markup if markupX used]
+	 * )
+	 */
+	public function convertAdvanced($fromCurrency, $toCurrency, $amount, $markup = 0.0, $decimals = -1) {
+		$rates = $this->getConvertedRatesTable($fromCurrency, $amount, $markup, $decimals); 
+		if(!isset($rates[$toCurrency])) throw new WireException("Can't find target currency."); 
+		return $rates[$toCurrency]; 
+	}
+
+	/**
+	 * Convert a rate from one currency to another and return the amount 
+	 *
+	 * @param string $fromCurrency Currency that units are specified in (use 3 digit currency code)
+	 * @param string $toCurrency Currency that you want to convert to (use 3 digit currency code)
+	 * @param int|float $amount Number of units in currency
+	 * @param float|int $markup OPTIONAL factor to markup exchange rate by. Example: to markup all rates by 2.3%, specify 0.023 as the markup value.
+	 * @param int $decimals OPTIONAL number of decimals to round to (default = -1, no rounding)
+	 * @return float converted currency amount
+	 */
+	public function convert($fromCurrency, $toCurrency, $amount, $markup = 0.0, $decimals = -1) {
+		$rate = $this->convertAdvanced($fromCurrency, $toCurrency, $amount, $markup, $decimals); 
+		return $rate['amount'];	
+	}
+
+	/**
+	 * Return the currency symbol used by the given currency
+	 * 
+	 * @param $currency 3 character currency code
+	 * @return string Symbol used by the currency (or blank if not used)
+	 * 
+	 */
+	public function getSymbol($currency) {
+		$rates = $this->getRatesTable();	
+		return $rates[$currency]['symbol'];
+	}
+	
+	/**
+	 * Return the currency name for the given currency code
+	 *
+	 * @param $currency 3 character currency code
+	 * @return string Name used by the currency
+	 *
+	 */
+	public function getName($currency) {
+		$rates = $this->getRatesTable();
+		return $rates[$currency]['name'];
+	}
+
+	/**
+	 * Get the exchange rate going from one currency to another.
+	 *
+	 * @param string $fromCurrency Currency that units are specified in (use 3 digit currency code)
+	 * @param string $toCurrency Currency that you want to convert to (use 3 digit currency code)
+	 * @return float Exchange rate
+	 *
+	 */
+	public function getExchangeRate($fromCurrency, $toCurrency) {
+		$rate = $this->convertAdvanced($fromCurrency, $toCurrency, 1, 0, 0); 
+		return $rate['x'];	
+	}
+
+	/**
+	 * Build a form allowing configuration of this Module
+	 *
+	 */
+	static public function getModuleConfigInputfields(array $data) {
+
+		$showInstructions = true; 
+		$inputfields = new InputfieldWrapper();
+
+		$f = wire('modules')->get('InputfieldURL'); 
+		$f->attr('name', 'serviceURL'); 
+		$f->attr('value', empty($data['serviceURL']) ? self::$defaultSettings['serviceURL'] : $data['serviceURL']); 
+		$f->label = __('OpenExchangeRates Web Service URL'); 
+		$f->required = true; 
+		$f->columnWidth = 50; 
+		$inputfields->add($f); 
+
+		$f = wire('modules')->get('InputfieldText'); 
+		$f->attr('name', 'appID'); 
+		$f->attr('value', empty($data['appID']) ? '' : $data['appID']); 
+		$f->label = __('OpenExchangeRates API Key (app_id)'); 
+		$f->required = true; 
+		$f->columnWidth = 50; 
+		$inputfields->add($f); 
+
+		$f = wire('modules')->get('InputfieldInteger'); 
+		$f->attr('name', 'cacheTime'); 
+		$f->attr('value', empty($data['cacheTime']) ? self::$defaultSettings['cacheTime'] : $data['cacheTime']); 
+		$f->label = __('Number of Seconds to Cache Exchange Rate Data'); 
+		$f->notes = __('86400=1 day, 3600=1 hour'); 
+		$inputfields->add($f); 
+
+		if(!empty($data['appID'])) {
+
+			$module = wire('modules')->get('ServiceCurrencyConversion'); 
+			$module->setEntityEncode(false); 
+			$refresh = wire('input')->post('_refresh') == 1;
+			$data = $module->getRatesTable(!$refresh);
+
+			if(count($data)) { 
+
+				$f = wire('modules')->get('InputfieldMarkup'); 
+				$f->label = __('Current Rate Data') . ' - ' . date('Y/m/d H:i:s', $module->lastUpdated()); 
+				$f->description = __('Your OpenExchangeRates.org connection appears to be working!');
+				$table = wire('modules')->get('MarkupAdminDataTable'); 
+				$table->headerRow(array('Code', 'Name', 'Symbol', 'Exchange Rate'));
+				foreach($data as $code => $curr) {
+					$table->row(array($curr['name'], $code, $curr['symbol'], $curr['x'])); 
+				}
+				$f->value .= $table->render() . '
+<h2>API Usage</h2>
+<p><pre>
+$cc = $modules->get("ServiceCurrencyConversion"); 
+$amount = 100; 
+$euros = $cc->convert("USD", "EUR", $amount);
+</pre></p>
+<p>See documentation for each public method in the module file for many more options including retrieval of currency names, symbols and more.</p>
+				';
+				$inputfields->add($f); 
+				$showInstructions = false; 
+
+				$f = wire('modules')->get('InputfieldCheckbox'); 
+				$f->attr('name', '_refresh'); 
+				$f->attr('value', 1); 
+				$f->label = __('Refresh rate data now'); 
+				$inputfields->add($f); 
+			}
+		}
+
+		if($showInstructions) { 
+			wire()->message("
+				To get an API key you will need to sign up for an OpenExchangeRates.org 
+				<a target='_blank' href='https://openexchangerates.org/signup/free'>free account</a> or 
+				<a target='_blank' href='https://openexchangerates.org/signup'>commercial account</a>.", Notice::allowMarkup); 
+		}
+
+		return $inputfields;
+	}
+
+	/**
+	 * Install the module
+	 *
+	 */
+	public function ___install() {
+	}
+
+	/**
+	 * Uninstall the module
+	 *
+	 */
+	public function ___uninstall() {
+		if(is_file($this->cacheFilename())) unlink($this->cacheFilename()); 
+	}
+}
+
