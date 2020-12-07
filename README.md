@@ -146,7 +146,7 @@ with each item containing the currency name, symbol and USD exchange rate
 `````````
 $data = $cc->getRatesTable($useCache = true); 
 print_r($data); 
-````````
+`````````
 The above would output: 
 ````````
 array(
@@ -161,7 +161,7 @@ array(
   ), 
   // ... and so on for all currencies
 ); 
-````````		
+````````
 
 The getRatesTable method accepts a $useCache method, which is true by default.
 If set to false, it will retrieve the data from OpenExchangeRates.org immediately
@@ -192,6 +192,6 @@ array(
   ),
   // ... and so on for all currencies
 )
-````````		
+````````
 
 	

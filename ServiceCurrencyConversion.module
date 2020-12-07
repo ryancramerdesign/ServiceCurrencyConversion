@@ -1,19 +1,22 @@
-<?php
+<?php namespace ProcessWire;
 
 /**
- * Currency Conversion Service
+ * Currency Conversion Service Module for ProcessWire
  * 
- * ProcessWire 2.x 
- * Copyright (C) 2014 by Ryan Cramer 
- * Licensed under GNU/GPL v2, see LICENSE.TXT
+ * Copyright (C) 2014-2020 by Ryan Cramer 
+ * License MPL2
  * 
- * http://processwire.com
+ * https://processwire.com
  *
  * USAGE
  *
  * $ex = $modules->get('ServiceCurrencyConversion'); 
  * $dollars = 100; 
  * $euros = $ex->convert('USD', 'EUR', $dollars); 
+ * 
+ * @property string $serviceURL
+ * @property string $appID
+ * @property int $cacheTime
  *
  */
 
@@ -29,12 +32,12 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 
 		return array(
 			'title' => 'Currency Conversion', 
-			'version' => 1, 
+			'version' => 2, 
 			'summary' => 'Provides API capabilities for converting from one currency to another, using the OpenExchangeRates service.',
 			'href' => 'http://openexchangerates.org', 
 			'singular' => false, 
 			'autoload' => false, 
-			);
+		);
 	}
 
 
@@ -46,7 +49,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 		'serviceURL' => 'http://openexchangerates.org/api/latest.json', 
 		'appID' => '', 
 		'cacheTime' => 86400
-		);
+	);
 
 	/**
 	 * Whether or not entity encoding is on for returned string values (code, name, symbol)
@@ -111,11 +114,13 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 	 * If not called, this module will follow the entity encoding state of the current page.
 	 * 
 	 * @param null|bool $entityEncode
-	 * @return this
+	 * @return self
 	 * 
 	 */
 	public function setEntityEncode($entityEncode = true) {
-		if(!is_null($entityEncode) && !is_bool($entityEncode)) throw new WireException("Invalid argument for entityEncode: must be null or bool"); 
+		if(!is_null($entityEncode) && !is_bool($entityEncode)) {
+			throw new WireException("Invalid argument for entityEncode: must be null or bool");
+		}
 		$this->entityEncode = $entityEncode; 
 		return $this; 
 	}
@@ -137,6 +142,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 	/**
 	 * Retrieve latest conversion data from openexchangerates.org web service
 	 * 
+	 * @param bool $useCache
 	 * @return array
 	 * 
 	 */
@@ -178,6 +184,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 	/**
 	 * Return a rates table for all currencies, indexed by currency code,including currency name, symbol and exchange rate (relative to USD)
 	 * 
+	 * @param bool $useCache
 	 * @return array
 	 * 
 	 */
@@ -186,7 +193,6 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 		$data = $this->getLatestData($useCache);
 		$curr = file(dirname(__FILE__) . '/currencies.txt'); 
 		$rates = array();
-		$sanitizer = $this->wire('sanitizer'); 
 
 		foreach($curr as $line) {
 			if(substr_count($line, "\t") < 2) {
@@ -201,7 +207,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 				'name' => $this->entities($name), 
 				'symbol' => $this->entities($symbol), 
 				'x' => (float) $data['rates'][$code]
-				);
+			);
 		}
 
 		return $rates; 
@@ -376,6 +382,9 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 
 	/**
 	 * Build a form allowing configuration of this Module
+	 * 
+	 * @param array $data
+	 * @return InputfieldWrapper
 	 *
 	 */
 	static public function getModuleConfigInputfields(array $data) {
@@ -383,6 +392,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 		$showInstructions = true; 
 		$inputfields = new InputfieldWrapper();
 
+		/** @var InputfieldURL $f */
 		$f = wire('modules')->get('InputfieldURL'); 
 		$f->attr('name', 'serviceURL'); 
 		$f->attr('value', empty($data['serviceURL']) ? self::$defaultSettings['serviceURL'] : $data['serviceURL']); 
@@ -391,6 +401,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 		$f->columnWidth = 50; 
 		$inputfields->add($f); 
 
+		/** @var InputfieldText $f */
 		$f = wire('modules')->get('InputfieldText'); 
 		$f->attr('name', 'appID'); 
 		$f->attr('value', empty($data['appID']) ? '' : $data['appID']); 
@@ -399,6 +410,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 		$f->columnWidth = 50; 
 		$inputfields->add($f); 
 
+		/** @var InputfieldInteger $f */
 		$f = wire('modules')->get('InputfieldInteger'); 
 		$f->attr('name', 'cacheTime'); 
 		$f->attr('value', empty($data['cacheTime']) ? self::$defaultSettings['cacheTime'] : $data['cacheTime']); 
@@ -408,6 +420,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 
 		if(!empty($data['appID'])) {
 
+			/** @var ServiceCurrencyConversion $module */
 			$module = wire('modules')->get('ServiceCurrencyConversion'); 
 			$module->setEntityEncode(false); 
 			$refresh = wire('input')->post('_refresh') == 1;
@@ -415,6 +428,7 @@ class ServiceCurrencyConversion extends WireData implements Module, Configurable
 
 			if(count($data)) { 
 
+				/** @var InputfieldMarkup $f */
 				$f = wire('modules')->get('InputfieldMarkup'); 
 				$f->label = __('Current Rate Data') . ' - ' . date('Y/m/d H:i:s', $module->lastUpdated()); 
 				$f->description = __('Your OpenExchangeRates.org connection appears to be working!');
@@ -435,6 +449,7 @@ $euros = $cc->convert("USD", "EUR", $amount);
 				$inputfields->add($f); 
 				$showInstructions = false; 
 
+				/** @var InputfieldCheckbox $f */
 				$f = wire('modules')->get('InputfieldCheckbox'); 
 				$f->attr('name', '_refresh'); 
 				$f->attr('value', 1); 
