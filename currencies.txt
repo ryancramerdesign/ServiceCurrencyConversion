@@ -16,7 +16,8 @@ BHD	Bahraini Dinar
 BIF	Burundi Franc	
 BMD	Bermudian Dollar (customarily known as Bermuda Dollar)	$
 BND	Brunei Dollar	$
-BOB BOV	Boliviano Mvdol	$b
+BOB	Bolivian Boliviano	$b
+BOV	Bolivian Mvdol	
 BRL	Brazilian Real	R$
 BSD	Bahamian Dollar	$
 BWP	Pula	P
@@ -25,11 +26,14 @@ BZD	Belize Dollar	BZ$
 CAD	Canadian Dollar	$
 CDF	Congolese Franc	
 CHF	Swiss Franc	CHF
-CLP CLF	Chilean Peso Unidades de fomento	$
+CLP	Chilean Peso	$
+CLF	Chilean Unidad de Fomento	
 CNY	Yuan Renminbi	¥
-COP COU	Colombian Peso Unidad de Valor Real	$
+COP	Colombian Peso	$
+COU	Unidad de Valor Real	
 CRC	Costa Rican Colon	₡
-CUP CUC	Cuban Peso Peso Convertible	₱
+CUP	Cuban Peso	₱
+CUC	Cuban Peso Convertible	$
 CVE	Cape Verde Escudo	
 CZK	Czech Koruna	Kč
 DJF	Djibouti Franc	
@@ -79,6 +83,7 @@ LAK	Kip	₭
 LBP	Lebanese Pound	£
 LKR	Sri Lanka Rupee	₨
 LRD	Liberian Dollar	$
+LSL	Lesotho Loti	
 LTL	Lithuanian Litas	Lt
 LVL	Latvian Lats	Ls
 LYD	Libyan Dinar	
@@ -93,16 +98,18 @@ MRO	Ouguiya
 MUR	Mauritius Rupee	₨
 MVR	Rufiyaa	
 MWK	Kwacha	
-MXN MXV	Mexican Peso Mexican Unidad de Inversion (UDI)	$
+MXN	Mexican Peso	$
+MXV	Mexican Unidad de Inversion (UDI)	$
 MYR	Malaysian Ringgit	RM
 MZN	Metical	MT
+NAD	Namibia Dollar	
 NGN	Naira	₦
 NIO	Cordoba Oro	C$
 NOK	Norwegian Krone	kr
 NPR	Nepalese Rupee	₨
 NZD	New Zealand Dollar	$
 OMR	Rial Omani	﷼
-PAB USD	Balboa US Dollar	B/.
+PAB	Panamanian balboa	B/.
 PEN	Nuevo Sol	S/.
 PGK	Kina	
 PHP	Philippine Peso	Php
@@ -125,7 +132,7 @@ SLL	Leone
 SOS	Somali Shilling	S
 SRD	Surinam Dollar	$
 STD	Dobra	
-SVC USD	El Salvador Colon US Dollar	$
+SVC	Salvadoran Colón	₡
 SYP	Syrian Pound	£
 SZL	Lilangeni	
 THB	Baht	฿
@@ -140,7 +147,8 @@ TZS	Tanzanian Shilling
 UAH	Hryvnia	₴
 UGX	Uganda Shilling	
 USD	US Dollar	$
-UYU UYI	Peso Uruguayo Uruguay Peso en Unidades Indexadas	$U
+UYU	Peso Uruguayo	$U
+UYI	Uruguay Peso en Unidades Indexadas	$U
 UZS	Uzbekistan Sum	лв
 VEF	Bolivar Fuerte	Bs
 VND	Dong	₫
@@ -162,8 +170,6 @@ XPF	CFP Franc
 XPT	Platinum	
 XTS	Codes specifically reserved for testing purposes	
 YER	Yemeni Rial	﷼
-ZAR	Rand	R
-ZAR LSL	Rand Loti	
-ZAR NAD	Rand Namibia Dollar	
+ZAR	South African Rand	R
 ZMK	Zambian Kwacha	
 ZWL	Zimbabwe Dollar
